@@ -51,8 +51,62 @@ async function run() {
       res.send(result);
     })
 
+    app.patch('/users/admin/:id',async(req,res) =>{
+      const id = req.params.id;
+      console.log(id);
+      const filter ={_id: new ObjectId(id)};
+      const updatedDoc ={
+        $set:{
+          role: 'admin',
+        },
+      }
+      const result =await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+
+    // app.patch('/users/:id/make-instructor', async (req, res) => {
+    //   try {
+    //     const userId = req.params.id;
+    //     const result = await usersCollection.findOneAndUpdate(
+    //       { _id: new ObjectId(userId) },
+    //       { $set: { role: "instructor" } },
+    //       { returnOriginal: false }
+    //     );
+    //     if (!result.value) {
+    //       return res.status(404).json({ message: "User not found" });
+    //     }
+    //     res.json(result.value);
+    //   } catch (error) {
+    //     console.error("Error updating user role:", error);
+    //     res.status(500).json({ message: "Failed to update user role" });
+    //   }
+    // });
+
+    // app.patch('/users/:id/make-admin', async (req, res) => {
+    //   try {
+    //     const userId = req.params.id;
+    //     const result = await usersCollection.findOneAndUpdate(
+    //       { _id: new ObjectId(userId) },
+    //       { $set: { role: "admin" } },
+    //       { returnOriginal: false }
+    //     );
+    //     if (!result.value) {
+    //       return res.status(404).json({ message: "User not found" });
+    //     }
+    //     res.json(result.value);
+    //   } catch (error) {
+    //     console.error("Error updating user role:", error);
+    //     res.status(500).json({ message: "Failed to update user role" });
+    //   }
+    // });
+
+
+
+
+
      // -----------------------
-    app.get("/ourClasses", async (req, res) => {
+    
+     app.get("/ourClasses", async (req, res) => {
       try {
         // Retrieve data from the collection
         const result = await ourClassesCollection.find().toArray();
