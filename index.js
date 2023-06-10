@@ -32,7 +32,26 @@ async function run() {
     const classesCollection = client.db("danceDb").collection("danceClasses");
     const instructorsCollection = client.db("danceDb").collection("instructors");
     const cartCollection = client.db("danceDb").collection("carts");
+    const usersCollection = client.db("danceDb").collection("users");
 
+    // users
+    app.get('/users',async(req,res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post('/users',async(req,res) =>{
+      const user =req.body;
+      const query ={email:user.email}
+      const existingUser =await usersCollection.findOne(query);
+      if(existingUser){
+        return res.send({message:'user already exists'})
+      }
+      const result =await usersCollection.insertOne(user);
+      res.send(result);
+    })
+
+     // -----------------------
     app.get("/ourClasses", async (req, res) => {
       try {
         // Retrieve data from the collection
@@ -94,7 +113,7 @@ async function run() {
       res.send(result);
     });
 
-    
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
