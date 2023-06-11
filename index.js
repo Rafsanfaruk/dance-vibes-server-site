@@ -14,13 +14,13 @@ const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
     return res
-      .status(402)
+      .status(401)
       .send({ error: true, message: "Invalid authorization" });
   }
   const token = authorization.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(402).send({ error: true, message: "Invalid access" });
+      return res.status(401).send({ error: true, message: "Invalid access" });
     }
     req.decoded = decoded;
     next();
@@ -47,9 +47,7 @@ async function run() {
 
     const ourClassesCollection = client.db("danceDb").collection("category");
     const classesCollection = client.db("danceDb").collection("danceClasses");
-    const instructorsCollection = client
-      .db("danceDb")
-      .collection("instructors");
+    const instructorsCollection = client.db("danceDb").collection("instructors");
     const cartCollection = client.db("danceDb").collection("carts");
     const usersCollection = client.db("danceDb").collection("users");
 
@@ -63,8 +61,32 @@ async function run() {
       res.send({ token });
     });
 
+// verify admin
+
+    const verifyAdmin =async(req, res, next) => {
+        const email =req.decoded.email;
+        const query ={email: email}
+        const user = await usersCollection.findOne(query);
+        if(user?.role !== 'admin'){
+          return ResizeObserver.status(403).send({error:true,message:'forbidden access '});
+        }
+        next();
+    }
+
+    // verify instructor
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== 'instructor') {
+        return res.status(403).send({ error: true, message: 'Forbidden access' });
+      }
+      next();
+    };
+    
+
     // users
-    app.get("/users", async (req, res) => {
+    app.get("/users",verifyJWT,verifyAdmin,async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
