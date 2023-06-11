@@ -184,6 +184,18 @@ app.get("/classes", async (req, res) => {
   }
 });
 
+// image store danceClasses
+
+app.post('/classes',verifyJWT,verifyInstructor, async (req, res) => {
+  try {
+    const danceItem = req.body;
+    const result = await classesCollection.insertOne(danceItem);
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ error: 'An error occurred while adding the dance item.' });
+  }
+});
+
 // PATCH route to approve a class
 app.patch("/classes/:id/approve", async (req, res) => {
   const { id } = req.params;
