@@ -164,15 +164,72 @@ async function run() {
     });
     // classes
 
-    app.get("/classes", async (req, res) => {
-      try {
-        const result = await classesCollection.find().toArray();
-        res.send(result);
-      } catch (error) {
-        console.error("Error fetching classes:", error);
-        res.status(500).send("Internal Server Error");
-      }
-    });
+    // app.get("/classes", async (req, res) => {
+    //   try {
+    //     const result = await classesCollection.find().toArray();
+    //     res.send(result);
+    //   } catch (error) {
+    //     console.error("Error fetching classes:", error);
+    //     res.status(500).send("Internal Server Error");
+    //   }
+    // });
+    // GET all classes
+app.get("/classes", async (req, res) => {
+  try {
+    const result = await classesCollection.find().toArray();
+    res.send(result);
+  } catch (error) {
+    console.error("Error fetching classes:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// PATCH route to approve a class
+app.patch("/classes/:id/approve", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await classesCollection.updateOne(
+      { _id: ObjectId(id) },
+      { $set: { status: "approved" } }
+    );
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error approving class:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// PATCH route to deny a class
+app.patch("/classes/:id/deny", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await classesCollection.updateOne(
+      { _id: ObjectId(id) },
+      { $set: { status: "denied" } }
+    );
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error denying class:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// POST route to send feedback to an instructor
+app.post("/feedback/:instructorId", async (req, res) => {
+  const { instructorId } = req.params;
+  const { feedback } = req.body;
+  try {
+    // Logic to send feedback to the instructor
+    // ...
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error sending feedback:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+    
 
     // Instructors
 
