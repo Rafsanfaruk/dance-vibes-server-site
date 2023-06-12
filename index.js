@@ -68,7 +68,7 @@ async function run() {
         const query ={email: email}
         const user = await usersCollection.findOne(query);
         if(user?.role !== 'admin'){
-          return ResizeObserver.status(403).send({error:true,message:'forbidden access '});
+          return res.status(403).send({error:true,message:'forbidden access '});
         }
         next();
     }
@@ -115,7 +115,7 @@ async function run() {
 
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      // console.log(id);
       const filter = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
@@ -127,6 +127,8 @@ async function run() {
     });
 
     // instructor
+   
+    
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       if (req.decoded.email !== email) {
@@ -137,19 +139,18 @@ async function run() {
       const result = { instructor: user?.role === "instructor" };
       res.send(result);
     });
-
+    
     app.patch("/users/instructor/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          role: "instructor",
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updatedDoc);
+      const update = { $set: { role: "instructor" } };
+    
+      const result = await usersCollection.updateOne(filter, update);
+    
       res.send(result);
     });
-
+    
+    
     // -----------------------
 
     app.get("/ourClasses", async (req, res) => {
@@ -245,7 +246,7 @@ app.post("/feedback/:instructorId", async (req, res) => {
 
     // Instructors
 
-    app.get("/instructors", async (req, res) => {
+    app.get("/instructor", async (req, res) => {
       try {
         const result = await instructorsCollection.find().toArray();
         res.send(result);
@@ -254,6 +255,19 @@ app.post("/feedback/:instructorId", async (req, res) => {
         res.status(500).send("Internal Server Error");
       }
     });
+    // app.get("/instructor", async (req, res) => {
+    //   try {
+    //     const result = await instructorsCollection.find().toArray();
+    //     res.send(result); // Sending the response here
+    //     // ...
+    //     // Some other code
+    //     // ...
+    //     res.send("Another response"); // Trying to send another response here (causing the error)
+    //   } catch (error) {
+    //     console.error("Error fetching instructors:", error);
+    //     res.status(500).send("Internal Server Error");
+    //   }
+    // });
 
     //  cart
 
@@ -278,7 +292,7 @@ app.post("/feedback/:instructorId", async (req, res) => {
 
     app.post("/carts", async (req, res) => {
       const classItem = req.body;
-      console.log(classItem);
+      // console.log(classItem);
       const result = await cartCollection.insertOne(classItem);
       res.send(result);
     });
