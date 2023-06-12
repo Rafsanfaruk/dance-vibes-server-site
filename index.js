@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY)
 
 // middleware
 app.use(cors());
@@ -50,6 +51,8 @@ async function run() {
     const instructorsCollection = client.db("danceDb").collection("instructors");
     const cartCollection = client.db("danceDb").collection("carts");
     const usersCollection = client.db("danceDb").collection("users");
+    const paymentCollection = client.db("danceDb").collection("payments");
+
 
     // token jwt token
 
@@ -303,6 +306,91 @@ app.post("/feedback/:instructorId", async (req, res) => {
       const result = await cartCollection.deleteOne(query);
       res.send(result);
     });
+// payments
+ //  Create payment intent
+
+ app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+  const { price } = req.body;
+  const amount = parseInt(price * 100);
+
+  // console.log(price,amount);
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: "USD",
+    payment_method_types: ["card"],
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+});
+
+// payment related api
+
+app.post("/payments", verifyJWT, async (req, res) => {
+  const payment = req.body;
+  const insetResult = await paymentCollection.insertOne(payment);
+
+  const query = {
+    _id: { $in: payment.cartItems.map((id) => new ObjectId(id)) },
+  };
+  const deleteResult = await cartCollection.deleteMany(query);
+
+  res.send({ insetResult, deleteResult });
+});
+
+app.get("/admin-stats",verifyJWT,verifyAdmin, async (req, res) => {
+  const users = await usersCollection.estimatedDocumentCount();
+  const products = await classesCollection.estimatedDocumentCount();
+  const orders = await paymentCollection.estimatedDocumentCount();
+
+  
+  const payments =await paymentCollection.find().toArray();
+  const revenue =payments.reduce((sum,payment) =>sum+payment.price,0)
+
+  res.send({
+    revenue,
+    users,
+    products,
+    orders,
+  });
+});
+
+app.get('/order-stats', verifyJWT,verifyAdmin,  async(req, res) =>{
+  const pipeline = [
+    {
+      $lookup: {
+        from: 'classes',
+        localField: 'classesItems',
+        foreignField: '_id',
+        as: 'classesItemsData'
+      }
+    },
+    {
+      $unwind: '$classesItemsData',
+    },
+    {
+      $group: {
+        _id: '$classesItemData.category',
+        count: { $sum: 1 },
+        total: { $sum: '$classesItemData.price' }
+      }
+    },
+    {
+      $project: {
+        category: '$_id',
+        count: 1,
+        total: { $round: ['$total', 2] },
+        _id: 0
+      }
+    }
+  ];
+
+  const result = await paymentCollection.aggregate(pipeline).toArray()
+  res.send(result)
+
+})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
